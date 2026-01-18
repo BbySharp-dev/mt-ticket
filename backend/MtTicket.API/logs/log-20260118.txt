@@ -1,0 +1,15 @@
+2026-01-18 19:39:07.490 +07:00 [INF] No action descriptors found. This may indicate an incorrectly configured application or missing application parts. To learn more, visit https://aka.ms/aspnet/mvc/app-parts
+2026-01-18 19:39:08.215 +07:00 [INF] Executed DbCommand (359ms) [Parameters=[], CommandType='"Text"', CommandTimeout='60']
+CREATE DATABASE [MtTicketDB];
+2026-01-18 19:39:08.328 +07:00 [INF] Executed DbCommand (110ms) [Parameters=[], CommandType='"Text"', CommandTimeout='60']
+IF SERVERPROPERTY('EngineEdition') <> 5
+BEGIN
+    ALTER DATABASE [MtTicketDB] SET READ_COMMITTED_SNAPSHOT ON;
+END;
+2026-01-18 19:39:08.344 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-01-18 19:39:08.353 +07:00 [INF] Database connected successfully
+2026-01-18 19:39:08.408 +07:00 [INF] Now listening on: http://localhost:5071
+2026-01-18 19:39:08.409 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-01-18 19:39:08.409 +07:00 [INF] Hosting environment: Development
+2026-01-18 19:39:08.409 +07:00 [INF] Content root path: /Users/aiumimi/Developer/FullStack/mt-ticket/backend/MtTicket.API
