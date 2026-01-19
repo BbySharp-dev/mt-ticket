@@ -23,7 +23,10 @@ dist/
 # Environment
 .env
 .env.local
-" > .gitignore
+
+# Logs
+logs/
+*.log
 
 # Docs
 docs/
