@@ -1,7 +1,9 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MtTicket.API.Data;
-// using MtTicket.API.Middleware; // Sẽ uncomment sau khi tạo middleware trong file 09-backend-middleware.md
+using MtTicket.API.Mappings;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,14 @@ builder.Host.UseSerilog();
 
 // Add services to the container
 builder.Services.AddControllers();
+
+// Add AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// Add FluentValidation 
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Cấu hình CORS
 builder.Services.AddCors(options =>
@@ -97,6 +107,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         dbContext.Database.EnsureCreated();
+        await DbSeeder.SeedAsync(dbContext);
         Log.Information("Database connected successfully");
     }
     catch (Exception ex)
