@@ -4,6 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MtTicket.API.Data;
 using MtTicket.API.Mappings;
+using MtTicket.API.Repositories.Booking;
+using MtTicket.API.Repositories.Event;
+using MtTicket.API.Repositories.UnitOfWork;
+using MtTicket.API.Repositories.User;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +49,12 @@ builder.Services.AddCors(options =>
 // Cấu hình Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Đăng Ký Repositories
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 
 // Cấu hình Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
