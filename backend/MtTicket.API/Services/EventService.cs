@@ -76,8 +76,41 @@ public class EventService : IEventService
             throw new InvalidOperationException("Ngày sự kiện không thể ở quá khứ");
         }
 
-        // Map các field được update
-        _mapper.Map(updateEventDto, eventEntity);
+        // Update thủ công để tránh bị reset các field khi client không gửi lên
+        if (!string.IsNullOrWhiteSpace(updateEventDto.Title))
+            eventEntity.Title = updateEventDto.Title;
+
+        if (updateEventDto.Description != null)
+            eventEntity.Description = updateEventDto.Description;
+
+        if (updateEventDto.ImageUrl != null)
+            eventEntity.ImageUrl = updateEventDto.ImageUrl;
+
+        if (updateEventDto.EventDate.HasValue)
+            eventEntity.EventDate = updateEventDto.EventDate.Value;
+
+        if (updateEventDto.EndDate.HasValue)
+            eventEntity.EndDate = updateEventDto.EndDate.Value;
+
+        if (!string.IsNullOrWhiteSpace(updateEventDto.Location))
+            eventEntity.Location = updateEventDto.Location;
+
+        if (updateEventDto.Price.HasValue)
+            eventEntity.Price = updateEventDto.Price.Value;
+
+        if (updateEventDto.TotalTickets.HasValue)
+        {
+            if (updateEventDto.TotalTickets.Value <= 0)
+                throw new InvalidOperationException("Số vé phải lớn hơn 0");
+
+            // điều chỉnh availableTickets theo chênh lệch
+            var diff = updateEventDto.TotalTickets.Value - eventEntity.TotalTickets;
+            eventEntity.TotalTickets = updateEventDto.TotalTickets.Value;
+            eventEntity.AvailableTickets += diff;
+            if (eventEntity.AvailableTickets < 0)
+                eventEntity.AvailableTickets = 0;
+        }
+
         eventEntity.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Events.Update(eventEntity);
