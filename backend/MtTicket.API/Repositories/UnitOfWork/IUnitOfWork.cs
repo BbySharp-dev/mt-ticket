@@ -18,6 +18,7 @@ public interface IUnitOfWork : IDisposable
     IBookingRepository Bookings { get; }
     IRepository<Ticket> Tickets { get; }
     IRepository<BookingItem> BookingItems { get; }
+    IRepository<RefreshToken> RefreshTokens { get; }
     
     ApplicationDbContext Context { get; } // Expose DbContext để dùng trong advanced features
 

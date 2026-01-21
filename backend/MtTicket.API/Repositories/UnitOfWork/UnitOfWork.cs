@@ -22,6 +22,7 @@ public class UnitOfWork : IUnitOfWork
     private IBookingRepository? _bookings;
     private IRepository<Ticket>? _tickets;
     private IRepository<BookingItem>? _bookingItems;
+    private IRepository<RefreshToken>? _refreshTokens;
     // Các repositories cho tính năng nâng cao 
     // private IRepository<Models.Venue>? _venues;
     // private IRepository<Models.Seat>? _seats;
@@ -49,6 +50,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<BookingItem> BookingItems => 
         _bookingItems ??= new Repository<BookingItem>(_context);
+
+    public IRepository<RefreshToken> RefreshTokens =>
+        _refreshTokens ??= new Repository<RefreshToken>(_context);
 
     public async Task<int> SaveChangesAsync()
     {
