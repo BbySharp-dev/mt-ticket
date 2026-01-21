@@ -1,4 +1,5 @@
 using MtTicket.API.Data;
+using MtTicket.API.Models;
 using MtTicket.API.Repositories.Booking;
 using MtTicket.API.Repositories.Common;
 using MtTicket.API.Repositories.Event;
@@ -15,8 +16,8 @@ public interface IUnitOfWork : IDisposable
     IUserRepository Users { get; }
     IEventRepository Events { get; }
     IBookingRepository Bookings { get; }
-    IRepository<Models.Ticket> Tickets { get; }
-    IRepository<Models.BookingItem> BookingItems { get; }
+    IRepository<Ticket> Tickets { get; }
+    IRepository<BookingItem> BookingItems { get; }
     
     ApplicationDbContext Context { get; } // Expose DbContext để dùng trong advanced features
 
