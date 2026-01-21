@@ -12,7 +12,7 @@ using MtTicket.API.Data;
 namespace MtTicket.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260118124827_InitialCreate")]
+    [Migration("20260120062641_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

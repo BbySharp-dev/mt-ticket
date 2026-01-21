@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using MtTicket.API.Data;
+using MtTicket.API.Models;
 using MtTicket.API.Repositories.Booking;
 using MtTicket.API.Repositories.Common;
 using MtTicket.API.Repositories.Event;
@@ -19,8 +20,8 @@ public class UnitOfWork : IUnitOfWork
     private IUserRepository? _users;
     private IEventRepository? _events;
     private IBookingRepository? _bookings;
-    private IRepository<Models.Ticket>? _tickets;
-    private IRepository<Models.BookingItem>? _bookingItems;
+    private IRepository<Ticket>? _tickets;
+    private IRepository<BookingItem>? _bookingItems;
     // Các repositories cho tính năng nâng cao 
     // private IRepository<Models.Venue>? _venues;
     // private IRepository<Models.Seat>? _seats;
@@ -43,11 +44,11 @@ public class UnitOfWork : IUnitOfWork
     public IBookingRepository Bookings => 
         _bookings ??= new BookingRepository(_context);
 
-    public IRepository<Models.Ticket> Tickets => 
-        _tickets ??= new Repository<Models.Ticket>(_context);
+    public IRepository<Ticket> Tickets => 
+        _tickets ??= new Repository<Ticket>(_context);
 
-    public IRepository<Models.BookingItem> BookingItems => 
-        _bookingItems ??= new Repository<Models.BookingItem>(_context);
+    public IRepository<BookingItem> BookingItems => 
+        _bookingItems ??= new Repository<BookingItem>(_context);
 
     public async Task<int> SaveChangesAsync()
     {
