@@ -36,4 +36,5 @@ public class User
 
     // Navigation properties (quan hệ với các bảng khác)
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

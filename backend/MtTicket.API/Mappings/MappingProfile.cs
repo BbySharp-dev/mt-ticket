@@ -34,7 +34,8 @@ public class MappingProfile : Profile
         // Booking mappings
         CreateMap<Booking, BookingDto>()
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.Username))
-            .ForMember(dest => dest.EventTitle, opt => opt.MapFrom(src => src.Event.Title));
+            .ForMember(dest => dest.EventTitle, opt => opt.MapFrom(src => src.Event.Title))
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.BookingItems));
 
         CreateMap<BookingItem, BookingItemDetailDto>()
             .ForMember(dest => dest.TicketType, opt => opt.MapFrom(src => src.Ticket.TicketType));

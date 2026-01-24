@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MtTicket.API.DTOs.Common;
 using MtTicket.API.DTOs.User;
 using MtTicket.API.Services;
+using System.Net;
 
 namespace MtTicket.API.Controllers;
 
@@ -11,11 +12,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ILogger<AuthController> _logger;
+    private readonly ILoginRateLimiter _loginRateLimiter;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger, ILoginRateLimiter loginRateLimiter)
     {
         _authService = authService;
         _logger = logger;
+        _loginRateLimiter = loginRateLimiter;
     }
 
     [HttpPost("register")]
@@ -54,6 +57,13 @@ public class AuthController : ControllerBase
     {
         try
         {
+            var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            if (_loginRateLimiter.IsLimitReached($"login:{clientIp}", 5, TimeSpan.FromMinutes(1)))
+            {
+                return StatusCode((int)HttpStatusCode.TooManyRequests,
+                    ApiResponse<AuthResult>.ErrorResponse("Vượt quá số lần đăng nhập, thử lại sau 1 phút"));
+            }
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -92,6 +102,34 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Lỗi khi validate token");
             return StatusCode(500, ApiResponse<bool>.ErrorResponse("Lỗi server"));
+        }
+    }
+
+    /// <summary>
+    /// Refresh token để lấy access token mới
+    /// </summary>
+    [HttpPost("refresh-token")]
+    public async Task<ActionResult<ApiResponse<AuthResult>>> RefreshToken([FromBody] RefreshTokenDto dto)
+    {
+        try
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.RefreshToken))
+            {
+                return BadRequest(ApiResponse<AuthResult>.ErrorResponse("Refresh token không hợp lệ"));
+            }
+
+            var result = await _authService.RefreshTokenAsync(dto.RefreshToken);
+            if (!result.Success)
+            {
+                return Unauthorized(ApiResponse<AuthResult>.ErrorResponse(result.ErrorMessage ?? "Refresh token không hợp lệ"));
+            }
+
+            return Ok(ApiResponse<AuthResult>.SuccessResponse(result, "Làm mới token thành công"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi refresh token");
+            return StatusCode(500, ApiResponse<AuthResult>.ErrorResponse("Lỗi server"));
         }
     }
 }

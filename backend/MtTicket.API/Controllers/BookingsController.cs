@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MtTicket.API.DTOs.Booking;
 using MtTicket.API.DTOs.Common;
+using MtTicket.API.Helpers;
 using MtTicket.API.Services;
-using System.Security.Claims;
 
 namespace MtTicket.API.Controllers;
 
@@ -21,17 +21,6 @@ public class BookingsController : ControllerBase
         _logger = logger;
     }
 
-    private int GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
-        {
-            throw new UnauthorizedAccessException("Không thể xác định user");
-        }
-
-        return userId;
-    }
-
     [HttpPost]
     public async Task<ActionResult<ApiResponse<BookingDto>>> CreateBooking([FromBody] CreateBookingDto createBookingDto)
     {
@@ -47,7 +36,7 @@ public class BookingsController : ControllerBase
                 return BadRequest(ApiResponse<BookingDto>.ErrorResponse("Dữ liệu không hợp lệ", errors));
             }
 
-            var userId = GetUserId();
+            var userId = UserHelper.GetUserId(User);
             var bookingDto = await _bookingService.CreateBookingAsync(userId, createBookingDto);
 
             return CreatedAtAction(nameof(GetBooking), new { id = bookingDto.Id },
@@ -73,7 +62,7 @@ public class BookingsController : ControllerBase
     {
         try
         {
-            var userId = GetUserId();
+            var userId = UserHelper.GetUserId(User);
             var bookings = await _bookingService.GetUserBookingsAsync(userId, paginationParams);
             return Ok(ApiResponse<PagedResponse<BookingDto>>.SuccessResponse(bookings));
         }
@@ -100,7 +89,7 @@ public class BookingsController : ControllerBase
                 return NotFound(ApiResponse<BookingDto>.ErrorResponse("Booking không tồn tại"));
             }
 
-            var userId = GetUserId();
+            var userId = UserHelper.GetUserId(User);
             if (bookingDto.UserId != userId)
             {
                 return Forbid();
@@ -124,7 +113,7 @@ public class BookingsController : ControllerBase
     {
         try
         {
-            var userId = GetUserId();
+            var userId = UserHelper.GetUserId(User);
             var result = await _bookingService.CancelBookingAsync(id, userId);
 
             if (!result)

@@ -19,6 +19,7 @@ public class BookingRepository : Repository<Models.Booking>, IBookingRepository
     {
         var query = _dbSet
             .Where(b => b.UserId == userId)
+            .Include(b => b.User) // để map UserName không bị null
             .Include(b => b.Event)
             .Include(b => b.BookingItems)
                 .ThenInclude(bi => bi.Ticket)
