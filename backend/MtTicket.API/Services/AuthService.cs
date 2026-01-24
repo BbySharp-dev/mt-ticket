@@ -4,7 +4,9 @@ using MtTicket.API.Models;
 using MtTicket.API.Repositories.UnitOfWork;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace MtTicket.API.Services;
 
@@ -15,11 +17,13 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
+    private readonly int _refreshTokenExpirationDays;
 
     public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
+        _refreshTokenExpirationDays = int.Parse(_configuration["JwtSettings:RefreshTokenExpirationInDays"] ?? "7");
     }
 
     public async Task<AuthResult> RegisterAsync(RegisterDto registerDto)
@@ -49,7 +53,8 @@ public class AuthService : IAuthService
         {
             Username = registerDto.Username,
             Email = registerDto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+            // Hash password với workFactor để tăng độ an toàn
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password, workFactor: 12),
             FullName = registerDto.FullName,
             PhoneNumber = registerDto.PhoneNumber,
             CreatedAt = DateTime.UtcNow,
@@ -61,11 +66,13 @@ public class AuthService : IAuthService
 
         // Tạo token
         var token = GenerateJwtToken(user);
+        var refreshToken = await GenerateAndStoreRefreshTokenAsync(user.Id);
 
         return new AuthResult
         {
             Success = true,
             Token = token,
+            RefreshToken = refreshToken,
             User = new UserDto
             {
                 Id = user.Id,
@@ -104,11 +111,13 @@ public class AuthService : IAuthService
 
         // Tạo token
         var token = GenerateJwtToken(user);
+        var refreshToken = await GenerateAndStoreRefreshTokenAsync(user.Id);
 
         return new AuthResult
         {
             Success = true,
             Token = token,
+            RefreshToken = refreshToken,
             User = new UserDto
             {
                 Id = user.Id,
@@ -148,6 +157,54 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<AuthResult> RefreshTokenAsync(string refreshToken)
+    {
+        var stored = await _unitOfWork.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == refreshToken && !rt.IsRevoked);
+
+        if (stored == null || stored.ExpiresAt < DateTime.UtcNow)
+        {
+            return new AuthResult
+            {
+                Success = false,
+                ErrorMessage = "Refresh token không hợp lệ hoặc đã hết hạn"
+            };
+        }
+
+        var user = await _unitOfWork.Users.GetByIdAsync(stored.UserId);
+        if (user == null)
+        {
+            return new AuthResult
+            {
+                Success = false,
+                ErrorMessage = "User không tồn tại"
+            };
+        }
+
+        // Revoke token cũ và tạo mới
+        stored.IsRevoked = true;
+        _unitOfWork.RefreshTokens.Update(stored);
+
+        var newRefresh = await GenerateAndStoreRefreshTokenAsync(user.Id);
+        var newAccess = GenerateJwtToken(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new AuthResult
+        {
+            Success = true,
+            Token = newAccess,
+            RefreshToken = newRefresh,
+            User = new UserDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                PhoneNumber = user.PhoneNumber,
+                CreatedAt = user.CreatedAt
+            }
+        };
+    }
+
     /// <summary>
     /// Tạo JWT token
     /// </summary>
@@ -177,5 +234,29 @@ public class AuthService : IAuthService
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
+    }
+
+    private async Task<string> GenerateAndStoreRefreshTokenAsync(int userId)
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        var refreshToken = Convert.ToBase64String(randomNumber);
+
+        var expiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
+
+        var entity = new RefreshToken
+        {
+            Token = refreshToken,
+            UserId = userId,
+            ExpiresAt = expiresAt,
+            CreatedAt = DateTime.UtcNow,
+            IsRevoked = false
+        };
+
+        await _unitOfWork.RefreshTokens.AddAsync(entity);
+        await _unitOfWork.SaveChangesAsync();
+
+        return refreshToken;
     }
 }
